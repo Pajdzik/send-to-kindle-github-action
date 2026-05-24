@@ -26,6 +26,8 @@ base_file = ""
 # exclude = { sent_to_kindle = true }
 require = {}
 exclude = {}
+# Optional: only consider articles whose frontmatter created date is on or after this date.
+earliest_created = ""
 
 # Maximum articles per EPUB/send run. Set 0 for unlimited.
 limit = 10

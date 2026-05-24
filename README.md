@@ -42,6 +42,7 @@ jobs:
   send:
     runs-on: ubuntu-latest
     env:
+      EARLIEST_CREATED: ${{ vars.EARLIEST_CREATED }}
       SMTP_HOST: ${{ vars.SMTP_HOST }}
       SMTP_PORT: ${{ vars.SMTP_PORT }}
 
@@ -55,12 +56,13 @@ jobs:
           python-version: "3.12"
 
       - name: Send articles
-        uses: Pajdzik/send-to-kindle-github-action@v4
+        uses: Pajdzik/send-to-kindle-github-action@v5
         with:
           articles-path: Articles
           title: Kamilpedia Articles
           author: Kamil
-          limit: "10"
+          earliest-created: ${{ vars.EARLIEST_CREATED }}
+          limit: ${{ vars.KINDLE_ARTICLE_LIMIT || '1' }}
           kindle-email: ${{ vars.KINDLE_EMAIL }}
           from-email: ${{ vars.FROM_EMAIL }}
           smtp-user: ${{ vars.SMTP_USER }}
@@ -79,6 +81,8 @@ FROM_EMAIL
 SMTP_USER
 SMTP_HOST
 SMTP_PORT
+EARLIEST_CREATED
+KINDLE_ARTICLE_LIMIT
 ```
 
 `FROM_EMAIL` must be approved in Amazon Kindle Personal Document Settings.
@@ -98,12 +102,25 @@ SMTP_HOST=smtp-mail.outlook.com
 SMTP_PORT=587
 ```
 
+To skip old backlog, set `EARLIEST_CREATED` to a date such as:
+
+```text
+EARLIEST_CREATED=2026-05-01
+```
+
+To tune the number of article emails per run:
+
+```text
+KINDLE_ARTICLE_LIMIT=1
+```
+
 ## Inputs
 
 | Input | Default | Description |
 | --- | --- | --- |
 | `articles-path` | `Articles` | Folder inside the checked-out vault that contains clipped Markdown articles. |
 | `base-file` | empty | Optional Obsidian `.base` file path to use as a selection hint. |
+| `earliest-created` | empty | Earliest article frontmatter `created` date to consider, in `YYYY-MM-DD` format. If omitted, `EARLIEST_CREATED` env var is used. |
 | `limit` | `10` | Maximum article emails per run. Use `0` for unlimited. |
 | `title` | `Obsidian Articles` | Reserved for future bundled mode. Individual EPUBs use article titles. |
 | `author` | `Obsidian` | EPUB author. |
@@ -120,6 +137,8 @@ SMTP_PORT=587
 ## Article Selection
 
 By default, the action reads every Markdown file under `articles-path`.
+
+If `earliest-created` or `EARLIEST_CREATED` is set, files without a frontmatter `created` date are skipped, and only articles with `created` on or after the cutoff are considered.
 
 It can also use an Obsidian `.base` file as a selection hint. [Obsidian Bases](https://obsidian.md/help/bases/syntax) are saved as `.base` files and define filters over Markdown files and properties. This action supports a practical subset:
 

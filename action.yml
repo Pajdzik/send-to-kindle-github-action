@@ -14,6 +14,10 @@ inputs:
     description: Optional Obsidian .base file path to use as a selection hint.
     required: false
     default: ""
+  earliest-created:
+    description: Earliest article frontmatter created date to consider, in YYYY-MM-DD format. If omitted, EARLIEST_CREATED env var is used.
+    required: false
+    default: ""
   limit:
     description: Maximum article emails to send per run. Use 0 for unlimited.
     required: false
@@ -71,6 +75,7 @@ runs:
       env:
         ARTICLES_PATH: ${{ inputs.articles-path }}
         BASE_FILE: ${{ inputs.base-file }}
+        EARLIEST_CREATED_INPUT: ${{ inputs.earliest-created }}
         LIMIT: ${{ inputs.limit }}
         TITLE: ${{ inputs.title }}
         AUTHOR: ${{ inputs.author }}
@@ -83,6 +88,7 @@ runs:
           --output "$RUNNER_TEMP/send-to-kindle.toml" \
           --articles-path "$ARTICLES_PATH" \
           --base-file "$BASE_FILE" \
+          --earliest-created "$EARLIEST_CREATED_INPUT" \
           --limit "$LIMIT" \
           --title "$TITLE" \
           --author "$AUTHOR" \

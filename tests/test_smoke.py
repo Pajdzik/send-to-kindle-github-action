@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from send_to_kindle.articles import parse_article
 from send_to_kindle.base_filters import BaseHints, matches_selection
-from send_to_kindle.cli import main
+from send_to_kindle.cli import created_on_or_after, main
 from send_to_kindle.epub import EpubMetadata, build_epub
 from send_to_kindle.markdown import inline_markdown
 
@@ -114,6 +114,13 @@ path = "{tmp_path / "state.json"}"
 
         self.assertEqual(html, '<a href="https://example.com/diagram.svg">Architecture</a>')
         self.assertNotIn("<img", html)
+
+    def test_created_cutoff(self):
+        self.assertTrue(created_on_or_after("2026-02-04", "2026-02-01"))
+        self.assertTrue(created_on_or_after("2026-02-04T12:00:00", "2026-02-04"))
+        self.assertFalse(created_on_or_after("2026-01-31", "2026-02-01"))
+        self.assertFalse(created_on_or_after(None, "2026-02-01"))
+        self.assertTrue(created_on_or_after(None, ""))
 
 
 if __name__ == "__main__":

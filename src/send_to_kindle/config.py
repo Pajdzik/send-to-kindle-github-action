@@ -23,6 +23,7 @@ class SelectionConfig:
     base_file: str = ""
     require: dict[str, Any] = field(default_factory=dict)
     exclude: dict[str, Any] = field(default_factory=dict)
+    earliest_created: str = ""
     limit: int = 10
 
 

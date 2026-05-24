@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import argparse
+from datetime import date
 from pathlib import Path
 import sys
+from typing import Any
 
 from .articles import article_sort_key
 from .base_filters import load_base_hints, matches_selection
@@ -40,6 +42,7 @@ def main(argv: list[str] | None = None) -> int:
             excluded=config.selection.exclude,
             base_hints=base_hints,
         )
+        and created_on_or_after(article.frontmatter.get("created"), config.selection.earliest_created)
     ]
     articles.sort(key=article_sort_key, reverse=True)
     articles = [article for article in articles if article.id not in state.sent_ids]
@@ -77,3 +80,28 @@ def main(argv: list[str] | None = None) -> int:
     state.save(state_path)
     print(f"Sent {len(articles)} article(s) to Kindle.")
     return 0
+
+
+def created_on_or_after(created_value: Any, earliest_created: str) -> bool:
+    cutoff = parse_date(earliest_created)
+    if cutoff is None:
+        return True
+
+    created = parse_date(created_value)
+    if created is None:
+        return False
+    return created >= cutoff
+
+
+def parse_date(value: Any) -> date | None:
+    if value is None:
+        return None
+    if isinstance(value, date):
+        return value
+    text = str(value).strip()
+    if not text:
+        return None
+    try:
+        return date.fromisoformat(text[:10])
+    except ValueError:
+        return None

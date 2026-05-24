@@ -10,6 +10,7 @@ def main() -> int:
     parser.add_argument("--output", required=True)
     parser.add_argument("--articles-path", required=True)
     parser.add_argument("--base-file", default="")
+    parser.add_argument("--earliest-created", default="")
     parser.add_argument("--limit", default="10")
     parser.add_argument("--title", required=True)
     parser.add_argument("--author", required=True)
@@ -20,6 +21,7 @@ def main() -> int:
     args = parser.parse_args()
     smtp_host = args.smtp_host or os.environ.get("SMTP_HOST") or "smtp.gmail.com"
     smtp_port = args.smtp_port or os.environ.get("SMTP_PORT") or "587"
+    earliest_created = args.earliest_created or os.environ.get("EARLIEST_CREATED") or ""
 
     output = Path(args.output)
     output.write_text(
@@ -34,6 +36,7 @@ def main() -> int:
                 f"base_file = {toml_string(args.base_file)}",
                 "require = {}",
                 "exclude = {}",
+                f"earliest_created = {toml_string(earliest_created)}",
                 f"limit = {toml_int(args.limit, default=10)}",
                 "",
                 "[output]",

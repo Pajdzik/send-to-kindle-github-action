@@ -16,6 +16,7 @@ jobs:
   send:
     runs-on: ubuntu-latest
     env:
+      EARLIEST_CREATED: ${{ vars.EARLIEST_CREATED }}
       SMTP_HOST: ${{ vars.SMTP_HOST }}
       SMTP_PORT: ${{ vars.SMTP_PORT }}
 
@@ -29,12 +30,13 @@ jobs:
           python-version: "3.12"
 
       - name: Send articles
-        uses: Pajdzik/send-to-kindle-github-action@v4
+        uses: Pajdzik/send-to-kindle-github-action@v5
         with:
           articles-path: Articles
           title: Kamilpedia Articles
           author: Kamil
-          limit: "10"
+          earliest-created: ${{ vars.EARLIEST_CREATED }}
+          limit: ${{ vars.KINDLE_ARTICLE_LIMIT || '1' }}
           kindle-email: ${{ vars.KINDLE_EMAIL }}
           from-email: ${{ vars.FROM_EMAIL }}
           smtp-user: ${{ vars.SMTP_USER }}

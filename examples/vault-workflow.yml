@@ -1,0 +1,38 @@
+name: Send articles to Kindle
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 14 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: send-to-kindle
+  cancel-in-progress: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out vault
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Send articles
+        uses: Pajdzik/send-to-kindle-github-action@v1
+        with:
+          articles-path: Articles
+          title: Kamilpedia Articles
+          author: Kamil
+          limit: "10"
+          kindle-email: ${{ secrets.KINDLE_EMAIL }}
+          from-email: ${{ secrets.FROM_EMAIL }}
+          smtp-user: ${{ secrets.SMTP_USER }}
+          smtp-password: ${{ secrets.SMTP_PASSWORD }}

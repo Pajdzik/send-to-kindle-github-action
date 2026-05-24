@@ -1,0 +1,123 @@
+name: Send Obsidian articles to Kindle
+description: Package clipped Markdown articles from an Obsidian vault into an EPUB and send it to Kindle.
+
+branding:
+  icon: book-open
+  color: orange
+
+inputs:
+  articles-path:
+    description: Folder inside the checked-out vault that contains clipped article Markdown files.
+    required: false
+    default: Articles
+  base-file:
+    description: Optional Obsidian .base file path to use as a selection hint.
+    required: false
+    default: ""
+  limit:
+    description: Maximum articles to send per run. Use 0 for unlimited.
+    required: false
+    default: "10"
+  title:
+    description: EPUB title.
+    required: false
+    default: Obsidian Articles
+  author:
+    description: EPUB author.
+    required: false
+    default: Obsidian
+  state-path:
+    description: Path to the sent-state JSON file in the vault repository.
+    required: false
+    default: .send-to-kindle-state.json
+  dry-run:
+    description: Build the EPUB without sending or updating state.
+    required: false
+    default: "false"
+  kindle-email:
+    description: Send to Kindle email address.
+    required: true
+  from-email:
+    description: Email address approved in Amazon Kindle Personal Document Settings.
+    required: true
+  smtp-host:
+    description: SMTP host used to send the Kindle email.
+    required: false
+    default: smtp.gmail.com
+  smtp-port:
+    description: SMTP port.
+    required: false
+    default: "587"
+  smtp-user:
+    description: SMTP username.
+    required: true
+  smtp-password:
+    description: SMTP password or app password.
+    required: true
+  commit-state:
+    description: Commit and push the sent-state file after a successful send.
+    required: false
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - name: Install send-to-kindle
+      shell: bash
+      run: python -m pip install "$GITHUB_ACTION_PATH"
+
+    - name: Write action config
+      shell: bash
+      env:
+        ARTICLES_PATH: ${{ inputs.articles-path }}
+        BASE_FILE: ${{ inputs.base-file }}
+        LIMIT: ${{ inputs.limit }}
+        TITLE: ${{ inputs.title }}
+        AUTHOR: ${{ inputs.author }}
+        STATE_PATH: ${{ inputs.state-path }}
+        DRY_RUN: ${{ inputs.dry-run }}
+        SMTP_HOST: ${{ inputs.smtp-host }}
+        SMTP_PORT: ${{ inputs.smtp-port }}
+      run: |
+        python "$GITHUB_ACTION_PATH/scripts/write_action_config.py" \
+          --output "$RUNNER_TEMP/send-to-kindle.toml" \
+          --articles-path "$ARTICLES_PATH" \
+          --base-file "$BASE_FILE" \
+          --limit "$LIMIT" \
+          --title "$TITLE" \
+          --author "$AUTHOR" \
+          --state-path "$STATE_PATH" \
+          --dry-run "$DRY_RUN" \
+          --smtp-host "$SMTP_HOST" \
+          --smtp-port "$SMTP_PORT"
+
+    - name: Send articles
+      shell: bash
+      env:
+        KINDLE_EMAIL: ${{ inputs.kindle-email }}
+        FROM_EMAIL: ${{ inputs.from-email }}
+        SMTP_USER: ${{ inputs.smtp-user }}
+        SMTP_PASSWORD: ${{ inputs.smtp-password }}
+      run: send-to-kindle --config "$RUNNER_TEMP/send-to-kindle.toml"
+
+    - name: Commit sent state
+      if: inputs.commit-state == 'true' && inputs.dry-run != 'true'
+      shell: bash
+      env:
+        STATE_PATH: ${{ inputs.state-path }}
+      run: |
+        if [ ! -f "$STATE_PATH" ]; then
+          echo "No sent-state changes to commit."
+          exit 0
+        fi
+
+        if git ls-files --error-unmatch "$STATE_PATH" >/dev/null 2>&1 && git diff --quiet -- "$STATE_PATH"; then
+          echo "No sent-state changes to commit."
+          exit 0
+        fi
+
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git add "$STATE_PATH"
+        git commit -m "Update Kindle sent state"
+        git push

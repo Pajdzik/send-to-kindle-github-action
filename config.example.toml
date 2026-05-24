@@ -1,0 +1,53 @@
+[source]
+# Use "local" for an Obsidian vault on disk, or "github" for a vault synced to GitHub.
+type = "github"
+
+# Local source settings.
+vault_path = "/Users/kamil/Documents/Kamilpedia"
+articles_path = "Articles"
+
+# GitHub source settings.
+owner = "Pajdzik"
+repo = "Kamilpedia"
+branch = "main"
+path = "Articles"
+# Optional for private repos or higher rate limits.
+token_env = "GITHUB_TOKEN"
+
+[selection]
+# Optional: read an Obsidian .base file and apply the supported filter subset.
+# Supports file.inFolder("..."), file.hasTag("..."), tag contains "...",
+# and simple property comparisons such as kindle == true.
+base_file = ""
+
+# Optional frontmatter/property filters. Leave empty to include all Markdown files.
+# Examples:
+# require = { kindle = true, status = "clipped" }
+# exclude = { sent_to_kindle = true }
+require = {}
+exclude = {}
+
+# Maximum articles per EPUB/send run. Set 0 for unlimited.
+limit = 10
+
+[output]
+title = "Kamilpedia Articles"
+author = "Kamil"
+directory = "out"
+
+[kindle]
+# Set dry_run = true to only build the EPUB.
+dry_run = true
+kindle_email = "your-kindle-address@kindle.com"
+# Optional alternative for deployments: leave kindle_email empty and read from this env var.
+kindle_email_env = "KINDLE_EMAIL"
+from_email = "you@example.com"
+# Optional alternative for deployments: leave from_email empty and read from this env var.
+from_email_env = "FROM_EMAIL"
+smtp_host = "smtp.gmail.com"
+smtp_port = 587
+smtp_user_env = "SMTP_USER"
+smtp_password_env = "SMTP_PASSWORD"
+
+[state]
+path = ".send-to-kindle-state.json"

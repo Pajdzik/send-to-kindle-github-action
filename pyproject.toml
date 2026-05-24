@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "send-to-kindle"
+version = "0.1.0"
+description = "Package clipped Obsidian articles into an EPUB and send them to Kindle."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Kamil" }]
+dependencies = []
+
+[project.scripts]
+send-to-kindle = "send_to_kindle.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

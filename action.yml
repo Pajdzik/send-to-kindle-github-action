@@ -41,13 +41,13 @@ inputs:
     description: Email address approved in Amazon Kindle Personal Document Settings.
     required: true
   smtp-host:
-    description: SMTP host used to send the Kindle email.
+    description: SMTP host used to send the Kindle email. If omitted, SMTP_HOST env var is used, then smtp.gmail.com.
     required: false
-    default: smtp.gmail.com
+    default: ""
   smtp-port:
-    description: SMTP port.
+    description: SMTP port. If omitted, SMTP_PORT env var is used, then 587.
     required: false
-    default: "587"
+    default: ""
   smtp-user:
     description: SMTP username.
     required: true
@@ -76,8 +76,8 @@ runs:
         AUTHOR: ${{ inputs.author }}
         STATE_PATH: ${{ inputs.state-path }}
         DRY_RUN: ${{ inputs.dry-run }}
-        SMTP_HOST: ${{ inputs.smtp-host }}
-        SMTP_PORT: ${{ inputs.smtp-port }}
+        INPUT_SMTP_HOST: ${{ inputs.smtp-host }}
+        INPUT_SMTP_PORT: ${{ inputs.smtp-port }}
       run: |
         python "$GITHUB_ACTION_PATH/scripts/write_action_config.py" \
           --output "$RUNNER_TEMP/send-to-kindle.toml" \
@@ -88,8 +88,8 @@ runs:
           --author "$AUTHOR" \
           --state-path "$STATE_PATH" \
           --dry-run "$DRY_RUN" \
-          --smtp-host "$SMTP_HOST" \
-          --smtp-port "$SMTP_PORT"
+          --smtp-host "$INPUT_SMTP_HOST" \
+          --smtp-port "$INPUT_SMTP_PORT"
 
     - name: Send articles
       shell: bash

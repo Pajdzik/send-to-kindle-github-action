@@ -41,7 +41,9 @@ class KindleConfig:
     from_email: str = ""
     from_email_env: str = "FROM_EMAIL"
     smtp_host: str = "smtp.gmail.com"
+    smtp_host_env: str = "SMTP_HOST"
     smtp_port: int = 587
+    smtp_port_env: str = "SMTP_PORT"
     smtp_user_env: str = "SMTP_USER"
     smtp_password_env: str = "SMTP_PASSWORD"
 

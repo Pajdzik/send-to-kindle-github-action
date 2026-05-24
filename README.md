@@ -81,6 +81,20 @@ SMTP_PASSWORD
 
 For Gmail, use an app password for `SMTP_PASSWORD`.
 
+Set these repository variables if you want a provider other than the default Gmail SMTP host:
+
+```text
+SMTP_HOST
+SMTP_PORT
+```
+
+For Outlook.com:
+
+```text
+SMTP_HOST=smtp-mail.outlook.com
+SMTP_PORT=587
+```
+
 ## Inputs
 
 | Input | Default | Description |
@@ -94,8 +108,8 @@ For Gmail, use an app password for `SMTP_PASSWORD`.
 | `dry-run` | `false` | Build the EPUB without sending or updating state. |
 | `kindle-email` | required | Send to Kindle email address. |
 | `from-email` | required | Approved sender email address. |
-| `smtp-host` | `smtp.gmail.com` | SMTP host. |
-| `smtp-port` | `587` | SMTP port. |
+| `smtp-host` | empty | SMTP host. If omitted, `SMTP_HOST` env var is used, then `smtp.gmail.com`. |
+| `smtp-port` | empty | SMTP port. If omitted, `SMTP_PORT` env var is used, then `587`. |
 | `smtp-user` | required | SMTP username. |
 | `smtp-password` | required | SMTP password or app password. |
 | `commit-state` | `true` | Commit the sent-state file after a successful send. |

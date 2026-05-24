@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 
 
@@ -14,9 +15,11 @@ def main() -> int:
     parser.add_argument("--author", required=True)
     parser.add_argument("--state-path", required=True)
     parser.add_argument("--dry-run", default="false")
-    parser.add_argument("--smtp-host", required=True)
-    parser.add_argument("--smtp-port", default="587")
+    parser.add_argument("--smtp-host", default="")
+    parser.add_argument("--smtp-port", default="")
     args = parser.parse_args()
+    smtp_host = args.smtp_host or os.environ.get("SMTP_HOST") or "smtp.gmail.com"
+    smtp_port = args.smtp_port or os.environ.get("SMTP_PORT") or "587"
 
     output = Path(args.output)
     output.write_text(
@@ -44,8 +47,10 @@ def main() -> int:
                 'kindle_email_env = "KINDLE_EMAIL"',
                 'from_email = ""',
                 'from_email_env = "FROM_EMAIL"',
-                f"smtp_host = {toml_string(args.smtp_host)}",
-                f"smtp_port = {toml_int(args.smtp_port, default=587)}",
+                f"smtp_host = {toml_string(smtp_host)}",
+                'smtp_host_env = "SMTP_HOST"',
+                f"smtp_port = {toml_int(smtp_port, default=587)}",
+                'smtp_port_env = "SMTP_PORT"',
                 'smtp_user_env = "SMTP_USER"',
                 'smtp_password_env = "SMTP_PASSWORD"',
                 "",

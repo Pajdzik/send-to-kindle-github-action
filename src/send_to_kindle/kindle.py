@@ -26,6 +26,9 @@ def send_to_kindle(epub_path: Path, config: KindleConfig) -> None:
             f"Missing SMTP credentials in {config.smtp_user_env} and {config.smtp_password_env}"
         )
 
+    smtp_host = _value_from_env_or_default(config.smtp_host_env, config.smtp_host)
+    smtp_port = _int_from_env_or_default(config.smtp_port_env, config.smtp_port)
+
     message = EmailMessage()
     message["Subject"] = "convert"
     message["From"] = from_email
@@ -38,7 +41,7 @@ def send_to_kindle(epub_path: Path, config: KindleConfig) -> None:
         filename=epub_path.name,
     )
 
-    with smtplib.SMTP(config.smtp_host, config.smtp_port) as smtp:
+    with smtplib.SMTP(smtp_host, smtp_port) as smtp:
         smtp.starttls()
         smtp.login(username, password)
         smtp.send_message(message)
@@ -50,3 +53,22 @@ def _value_or_env(value: str, env_name: str) -> str:
     if env_name:
         return os.environ.get(env_name, "")
     return ""
+
+
+def _value_from_env_or_default(env_name: str, default: str) -> str:
+    if env_name:
+        value = os.environ.get(env_name)
+        if value:
+            return value
+    return default
+
+
+def _int_from_env_or_default(env_name: str, default: int) -> int:
+    if env_name:
+        value = os.environ.get(env_name)
+        if value:
+            try:
+                return int(value)
+            except ValueError as error:
+                raise ValueError(f"{env_name} must be an integer") from error
+    return default

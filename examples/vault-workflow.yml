@@ -15,6 +15,9 @@ concurrency:
 jobs:
   send:
     runs-on: ubuntu-latest
+    env:
+      SMTP_HOST: ${{ vars.SMTP_HOST }}
+      SMTP_PORT: ${{ vars.SMTP_PORT }}
 
     steps:
       - name: Check out vault

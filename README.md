@@ -41,6 +41,9 @@ concurrency:
 jobs:
   send:
     runs-on: ubuntu-latest
+    env:
+      SMTP_HOST: ${{ vars.SMTP_HOST }}
+      SMTP_PORT: ${{ vars.SMTP_PORT }}
 
     steps:
       - name: Check out vault
@@ -52,41 +55,41 @@ jobs:
           python-version: "3.12"
 
       - name: Send articles
-        uses: Pajdzik/send-to-kindle-github-action@v2
+        uses: Pajdzik/send-to-kindle-github-action@v3
         with:
           articles-path: Articles
           title: Kamilpedia Articles
           author: Kamil
           limit: "10"
-          kindle-email: ${{ secrets.KINDLE_EMAIL }}
-          from-email: ${{ secrets.FROM_EMAIL }}
-          smtp-user: ${{ secrets.SMTP_USER }}
+          kindle-email: ${{ vars.KINDLE_EMAIL }}
+          from-email: ${{ vars.FROM_EMAIL }}
+          smtp-user: ${{ vars.SMTP_USER }}
           smtp-password: ${{ secrets.SMTP_PASSWORD }}
 ```
 
 An example is also available at [examples/vault-workflow.yml](examples/vault-workflow.yml).
 
-## Required Secrets
+## Required Variables And Secrets
 
-Add these secrets to the vault repository, not this action repository:
+Add these repository variables to the vault repository, not this action repository:
 
 ```text
 KINDLE_EMAIL
 FROM_EMAIL
 SMTP_USER
-SMTP_PASSWORD
+SMTP_HOST
+SMTP_PORT
 ```
 
 `FROM_EMAIL` must be approved in Amazon Kindle Personal Document Settings.
 
-For Gmail, use an app password for `SMTP_PASSWORD`.
-
-Set these repository variables if you want a provider other than the default Gmail SMTP host:
+Add this repository secret:
 
 ```text
-SMTP_HOST
-SMTP_PORT
+SMTP_PASSWORD
 ```
+
+For Gmail or Outlook.com, use an app password for `SMTP_PASSWORD`.
 
 For Outlook.com:
 

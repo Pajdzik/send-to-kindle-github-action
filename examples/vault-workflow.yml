@@ -2,6 +2,11 @@ name: Send articles to Kindle
 
 on:
   workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "Articles/**"
+      - ".github/workflows/send-to-kindle.yml"
   schedule:
     - cron: "17 14 * * *"
 

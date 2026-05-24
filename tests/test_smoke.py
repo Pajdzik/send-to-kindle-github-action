@@ -8,6 +8,7 @@ from send_to_kindle.articles import parse_article
 from send_to_kindle.base_filters import BaseHints, matches_selection
 from send_to_kindle.cli import main
 from send_to_kindle.epub import EpubMetadata, build_epub
+from send_to_kindle.markdown import inline_markdown
 
 
 class SmokeTest(unittest.TestCase):
@@ -107,6 +108,12 @@ path = "{tmp_path / "state.json"}"
             self.assertEqual(len(epub_files), 2)
             self.assertTrue(any(path.name.startswith("first-") for path in epub_files))
             self.assertTrue(any(path.name.startswith("second-") for path in epub_files))
+
+    def test_markdown_images_render_as_links(self):
+        html = inline_markdown("![Architecture](https://example.com/diagram.svg)")
+
+        self.assertEqual(html, '<a href="https://example.com/diagram.svg">Architecture</a>')
+        self.assertNotIn("<img", html)
 
 
 if __name__ == "__main__":

@@ -55,7 +55,7 @@ jobs:
           python-version: "3.12"
 
       - name: Send articles
-        uses: Pajdzik/send-to-kindle-github-action@v3
+        uses: Pajdzik/send-to-kindle-github-action@v4
         with:
           articles-path: Articles
           title: Kamilpedia Articles
@@ -161,5 +161,5 @@ send-to-kindle --config config.toml --dry-run
 ## Notes
 
 - The generated EPUB is written to `out/`.
-- The current Markdown renderer handles the common clipped-article subset: headings, paragraphs, lists, blockquotes, fenced code, links, images, bold, italic, inline code, and Obsidian wikilinks.
+- The current Markdown renderer handles the common clipped-article subset: headings, paragraphs, lists, blockquotes, fenced code, links, bold, italic, inline code, and Obsidian wikilinks. Images are rendered as links for Kindle compatibility.
 - The action expects the vault workflow to run `actions/setup-python` before calling it.

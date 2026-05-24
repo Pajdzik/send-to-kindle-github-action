@@ -71,7 +71,7 @@ def markdown_to_xhtml(markdown: str) -> str:
 
 def inline_markdown(text: str) -> str:
     text = escape(text)
-    text = re.sub(r"!\[([^\]]*)\]\(([^)]+)\)", r'<img alt="\1" src="\2" />', text)
+    text = re.sub(r"!\[([^\]]*)\]\(([^)]+)\)", image_to_link, text)
     text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r'<a href="\2">\1</a>', text)
     text = re.sub(r"\[\[([^|\]]+)\|([^\]]+)\]\]", r"\2", text)
     text = re.sub(r"\[\[([^\]]+)\]\]", r"\1", text)
@@ -79,3 +79,9 @@ def inline_markdown(text: str) -> str:
     text = re.sub(r"\*([^*]+)\*", r"<em>\1</em>", text)
     text = re.sub(r"`([^`]+)`", r"<code>\1</code>", text)
     return text
+
+
+def image_to_link(match: re.Match[str]) -> str:
+    alt = match.group(1).strip() or "Image"
+    url = match.group(2).strip()
+    return f'<a href="{url}">{alt}</a>'

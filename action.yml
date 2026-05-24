@@ -1,5 +1,5 @@
 name: Send Obsidian articles to Kindle
-description: Package clipped Markdown articles from an Obsidian vault into an EPUB and send it to Kindle.
+description: Package clipped Markdown articles from an Obsidian vault into individual EPUBs and send them to Kindle.
 
 branding:
   icon: book-open
@@ -15,11 +15,11 @@ inputs:
     required: false
     default: ""
   limit:
-    description: Maximum articles to send per run. Use 0 for unlimited.
+    description: Maximum article emails to send per run. Use 0 for unlimited.
     required: false
     default: "10"
   title:
-    description: EPUB title.
+    description: Reserved for future bundled mode. Individual EPUBs use article titles.
     required: false
     default: Obsidian Articles
   author:

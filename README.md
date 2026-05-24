@@ -1,6 +1,6 @@
 # Send to Kindle GitHub Action
 
-Package clipped Markdown articles from an Obsidian vault into an EPUB and send it to Kindle.
+Package clipped Markdown articles from an Obsidian vault into individual EPUBs and send them to Kindle.
 
 This repository is both:
 
@@ -10,7 +10,7 @@ This repository is both:
 The intended setup is:
 
 ```text
-Obsidian vault repo -> scheduled GitHub workflow -> this action -> Kindle email delivery
+Obsidian vault repo -> scheduled GitHub workflow -> this action -> one Kindle email per article
 ```
 
 ## Use In Your Vault
@@ -101,8 +101,8 @@ SMTP_PORT=587
 | --- | --- | --- |
 | `articles-path` | `Articles` | Folder inside the checked-out vault that contains clipped Markdown articles. |
 | `base-file` | empty | Optional Obsidian `.base` file path to use as a selection hint. |
-| `limit` | `10` | Maximum articles per run. Use `0` for unlimited. |
-| `title` | `Obsidian Articles` | EPUB title. |
+| `limit` | `10` | Maximum article emails per run. Use `0` for unlimited. |
+| `title` | `Obsidian Articles` | Reserved for future bundled mode. Individual EPUBs use article titles. |
 | `author` | `Obsidian` | EPUB author. |
 | `state-path` | `.send-to-kindle-state.json` | Sent-state file committed back to the vault repo. |
 | `dry-run` | `false` | Build the EPUB without sending or updating state. |
@@ -129,7 +129,9 @@ If your Base uses advanced formulas, keep the action pointed at a dedicated arti
 
 ## State
 
-After a successful send, the action writes article IDs to:
+The action sends one email per selected article. Each email has one EPUB attachment, and each EPUB uses the article title as its Kindle document title.
+
+After a successful run, the action writes article IDs to:
 
 ```text
 .send-to-kindle-state.json

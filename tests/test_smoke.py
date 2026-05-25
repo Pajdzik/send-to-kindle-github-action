@@ -46,6 +46,28 @@ Hello.
 
         self.assertEqual(article.title, "A Much Better Article Title")
 
+    def test_article_id_uses_url_and_survives_moves(self):
+        text = """---
+title: Example
+URL: "https://Example.com:443/path?x=1#section"
+---
+Body
+"""
+        first = parse_article("Articles/example.md", text)
+        moved = parse_article("Archive/example.md", text)
+
+        self.assertEqual(first.id, moved.id)
+
+    def test_article_id_falls_back_to_content_when_url_is_missing(self):
+        text = """---
+title: Example
+---
+Body
+"""
+        first = parse_article("Articles/example.md", text)
+        moved = parse_article("Archive/example.md", text)
+
+        self.assertEqual(first.id, moved.id)
 
     def test_selection_matches_tags_and_properties(self):
         article = parse_article(

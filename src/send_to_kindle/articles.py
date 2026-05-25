@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 import hashlib
 import re
 from typing import Any
+from urllib.parse import urlsplit, urlunsplit
 
 
 @dataclass(frozen=True)
@@ -19,8 +20,72 @@ class Article:
 def parse_article(path: str, text: str) -> Article:
     frontmatter, body = split_frontmatter(text)
     title = infer_title(path, body, frontmatter)
-    digest = hashlib.sha256((path + "\0" + text).encode("utf-8")).hexdigest()[:16]
-    return Article(id=digest, path=path, title=title, markdown=body.strip(), frontmatter=frontmatter)
+    article_id = article_identity(text, frontmatter)
+    return Article(
+        id=article_id,
+        path=path,
+        title=title,
+        markdown=body.strip(),
+        frontmatter=frontmatter,
+    )
+
+
+def article_identity(text: str, frontmatter: dict[str, Any]) -> str:
+    url = article_url(frontmatter)
+    if url:
+        return digest_id("url", url)
+    return digest_id("content", normalize_content(text))
+
+
+def article_url(frontmatter: dict[str, Any]) -> str:
+    url_keys = {
+        "url",
+        "source_url",
+        "sourceurl",
+        "canonical_url",
+        "canonicalurl",
+        "original_url",
+        "originalurl",
+        "link",
+    }
+
+    for key, value in frontmatter.items():
+        normalized_key = str(key).strip().lower().replace("-", "_").replace(" ", "_")
+        if normalized_key not in url_keys:
+            continue
+        if isinstance(value, str):
+            normalized = normalize_url(value)
+            if normalized:
+                return normalized
+    return ""
+
+
+def normalize_url(value: str) -> str:
+    url = value.strip()
+    if not url:
+        return ""
+
+    parsed = urlsplit(url)
+    if parsed.scheme.lower() not in {"http", "https"} or not parsed.netloc:
+        return ""
+
+    netloc = parsed.netloc.lower()
+    if parsed.scheme.lower() == "http" and netloc.endswith(":80"):
+        netloc = netloc[:-3]
+    if parsed.scheme.lower() == "https" and netloc.endswith(":443"):
+        netloc = netloc[:-4]
+
+    return urlunsplit(
+        (parsed.scheme.lower(), netloc, parsed.path or "/", parsed.query, "")
+    )
+
+
+def normalize_content(text: str) -> str:
+    return "\n".join(line.rstrip() for line in text.strip().splitlines())
+
+
+def digest_id(namespace: str, value: str) -> str:
+    return hashlib.sha256((namespace + "\0" + value).encode("utf-8")).hexdigest()[:16]
 
 
 def split_frontmatter(text: str) -> tuple[dict[str, Any], str]:

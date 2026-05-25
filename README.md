@@ -166,6 +166,10 @@ After a successful run, the action writes article IDs to:
 
 It then commits that file back to the vault repo. This prevents future scheduled runs from sending the same articles again.
 
+Article IDs are based on a URL frontmatter/property value when one is available, so moving notes around in the vault does not make them look new. Supported URL property names include `url`, `URL`, `source_url`, `source URL`, `canonical_url`, `original_url`, and `link`.
+
+If no URL property is available, the action falls back to a normalized content hash.
+
 ## Local Development
 
 ```bash

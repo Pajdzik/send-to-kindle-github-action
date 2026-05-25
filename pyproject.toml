@@ -9,7 +9,7 @@ description = "Package clipped Obsidian articles into an EPUB and send them to K
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [{ name = "Kamil" }]
-dependencies = []
+dependencies = ["Pillow>=10"]
 
 [project.scripts]
 send-to-kindle = "send_to_kindle.cli:main"

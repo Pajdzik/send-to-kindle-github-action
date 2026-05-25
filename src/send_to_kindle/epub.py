@@ -3,11 +3,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from html import escape
+from io import BytesIO
 from pathlib import Path
 import re
 from urllib.parse import urlsplit
 import uuid
 from zipfile import ZIP_DEFLATED, ZIP_STORED, ZipFile
+
+from PIL import Image, ImageDraw, ImageFont
 
 from .articles import Article, article_url
 from .markdown import markdown_to_xhtml
@@ -33,7 +36,7 @@ def build_epub(articles: list[Article], metadata: EpubMetadata, output_dir: Path
         epub.writestr("mimetype", "application/epub+zip", compress_type=ZIP_STORED)
         epub.writestr("META-INF/container.xml", container_xml(), compress_type=ZIP_DEFLATED)
         epub.writestr("OEBPS/styles.css", styles_css(), compress_type=ZIP_DEFLATED)
-        epub.writestr("OEBPS/images/cover.svg", cover_svg(articles[0], metadata), compress_type=ZIP_DEFLATED)
+        epub.writestr("OEBPS/images/cover.jpg", cover_jpeg(articles[0], metadata), compress_type=ZIP_DEFLATED)
         epub.writestr("OEBPS/cover.xhtml", cover_xhtml(metadata), compress_type=ZIP_DEFLATED)
         epub.writestr("OEBPS/nav.xhtml", nav_xhtml(articles, metadata), compress_type=ZIP_DEFLATED)
         for index, article in enumerate(articles, start=1):
@@ -81,7 +84,7 @@ def content_opf(articles: list[Article], metadata: EpubMetadata, book_id: str, m
     <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item id="styles" href="styles.css" media-type="text/css"/>
     <item id="cover" href="cover.xhtml" media-type="application/xhtml+xml"/>
-    <item id="cover-image" href="images/cover.svg" media-type="image/svg+xml" properties="cover-image"/>
+    <item id="cover-image" href="images/cover.jpg" media-type="image/jpeg" properties="cover-image"/>
 {manifest_items}
   </manifest>
   <spine>
@@ -136,44 +139,78 @@ def cover_xhtml(metadata: EpubMetadata) -> str:
     </style>
   </head>
   <body>
-    <img src="images/cover.svg" alt="{escape(metadata.title)}"/>
+    <img src="images/cover.jpg" alt="{escape(metadata.title)}"/>
   </body>
 </html>
 """
 
 
-def cover_svg(article: Article, metadata: EpubMetadata) -> str:
-    title_lines = svg_text_lines(article.title, max_chars=24, max_lines=7)
-    title_tspans = svg_tspans(title_lines, x=120, y=530, line_height=112)
+def cover_jpeg(article: Article, metadata: EpubMetadata) -> bytes:
+    width = 1600
+    height = 2560
+    image = Image.new("RGB", (width, height), "#f5f1e8")
+    draw = ImageDraw.Draw(image)
+
+    title_font = cover_font(104, bold=True)
+    source_font = cover_font(56)
+    byline_font = cover_font(58)
+    footer_font = cover_font(44)
+
     author = article_author(article) or metadata.author
     domain = article_domain(article)
     byline = f"By {author}" if author else ""
     source = domain.upper() if domain else ""
 
-    return f"""<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="2560" viewBox="0 0 1600 2560" role="img" aria-label="{escape(article.title)}">
-  <rect width="1600" height="2560" fill="#f5f1e8"/>
-  <rect x="88" y="88" width="1424" height="2384" fill="none" stroke="#252525" stroke-width="8"/>
-  <rect x="120" y="120" width="1360" height="2320" fill="none" stroke="#9a8f7b" stroke-width="2"/>
-  <text x="120" y="330" fill="#756a58" font-family="Georgia, 'Times New Roman', serif" font-size="56" letter-spacing="6">{escape(source)}</text>
-  <text fill="#1f1f1f" font-family="Georgia, 'Times New Roman', serif" font-size="104" font-weight="700">
-{title_tspans}
-  </text>
-  <line x1="120" y1="1690" x2="540" y2="1690" stroke="#252525" stroke-width="6"/>
-  <text x="120" y="1805" fill="#3a3a3a" font-family="Georgia, 'Times New Roman', serif" font-size="58">{escape(byline)}</text>
-  <text x="120" y="2235" fill="#756a58" font-family="Georgia, 'Times New Roman', serif" font-size="44">Sent to Kindle</text>
-</svg>
-"""
+    draw.rectangle((88, 88, 1512, 2472), outline="#252525", width=8)
+    draw.rectangle((120, 120, 1480, 2440), outline="#9a8f7b", width=2)
+    draw.text((120, 270), source, fill="#756a58", font=source_font)
+
+    title_lines = image_text_lines(draw, article.title, title_font, max_width=1360, max_lines=7)
+    y = 500
+    for line in title_lines:
+        draw.text((120, y), line, fill="#1f1f1f", font=title_font)
+        y += 118
+
+    draw.line((120, 1690, 540, 1690), fill="#252525", width=6)
+    draw.text((120, 1740), byline, fill="#3a3a3a", font=byline_font)
+    draw.text((120, 2185), "Sent to Kindle", fill="#756a58", font=footer_font)
+
+    output = BytesIO()
+    image.save(output, format="JPEG", quality=92, optimize=True)
+    return output.getvalue()
 
 
-def svg_tspans(lines: list[str], x: int, y: int, line_height: int) -> str:
-    return "\n".join(
-        f'    <tspan x="{x}" y="{y + (index * line_height)}">{escape(line)}</tspan>'
-        for index, line in enumerate(lines)
+def cover_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+    names = (
+        ("Georgia Bold.ttf", "Georgia.ttf"),
+        ("Times New Roman Bold.ttf", "Times New Roman.ttf"),
+        ("DejaVuSerif-Bold.ttf", "DejaVuSerif.ttf"),
+        ("LiberationSerif-Bold.ttf", "LiberationSerif-Regular.ttf"),
+    )
+    roots = (
+        Path("/System/Library/Fonts/Supplemental"),
+        Path("/Library/Fonts"),
+        Path("/usr/share/fonts/truetype/dejavu"),
+        Path("/usr/share/fonts/truetype/liberation2"),
     )
 
+    for bold_name, regular_name in names:
+        filename = bold_name if bold else regular_name
+        for root in roots:
+            path = root / filename
+            if path.exists():
+                return ImageFont.truetype(str(path), size=size)
 
-def svg_text_lines(text: str, max_chars: int, max_lines: int) -> list[str]:
+    return ImageFont.load_default()
+
+
+def image_text_lines(
+    draw: ImageDraw.ImageDraw,
+    text: str,
+    font: ImageFont.FreeTypeFont | ImageFont.ImageFont,
+    max_width: int,
+    max_lines: int,
+) -> list[str]:
     words = text.split()
     if not words:
         return ["Untitled"]
@@ -182,7 +219,7 @@ def svg_text_lines(text: str, max_chars: int, max_lines: int) -> list[str]:
     current = ""
     for word in words:
         candidate = f"{current} {word}".strip()
-        if len(candidate) <= max_chars:
+        if draw.textlength(candidate, font=font) <= max_width:
             current = candidate
             continue
         if current:

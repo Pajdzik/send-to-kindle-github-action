@@ -36,7 +36,6 @@ def build_epub(articles: list[Article], metadata: EpubMetadata, output_dir: Path
         epub.writestr("mimetype", "application/epub+zip", compress_type=ZIP_STORED)
         epub.writestr("META-INF/container.xml", container_xml(), compress_type=ZIP_DEFLATED)
         epub.writestr("OEBPS/styles.css", styles_css(), compress_type=ZIP_DEFLATED)
-        epub.writestr("OEBPS/images/cover.svg", cover_svg(), compress_type=ZIP_DEFLATED)
         epub.writestr("OEBPS/images/cover.jpg", cover_jpeg(articles[0], metadata), compress_type=ZIP_DEFLATED)
         epub.writestr("OEBPS/cover.xhtml", cover_xhtml(metadata), compress_type=ZIP_DEFLATED)
         epub.writestr("OEBPS/nav.xhtml", nav_xhtml(articles, metadata), compress_type=ZIP_DEFLATED)
@@ -85,8 +84,7 @@ def content_opf(articles: list[Article], metadata: EpubMetadata, book_id: str, m
     <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item id="styles" href="styles.css" media-type="text/css"/>
     <item id="cover" href="cover.xhtml" media-type="application/xhtml+xml"/>
-    <item id="cover-image" href="images/cover.svg" media-type="image/svg+xml" properties="cover-image"/>
-    <item id="cover-raster" href="images/cover.jpg" media-type="image/jpeg"/>
+    <item id="cover-image" href="images/cover.jpg" media-type="image/jpeg" properties="cover-image"/>
 {manifest_items}
   </manifest>
   <spine>
@@ -141,19 +139,9 @@ def cover_xhtml(metadata: EpubMetadata) -> str:
     </style>
   </head>
   <body>
-    <img src="images/cover.svg" alt="{escape(metadata.title)}"/>
+    <img src="images/cover.jpg" alt="{escape(metadata.title)}"/>
   </body>
 </html>
-"""
-
-
-def cover_svg() -> str:
-    width = 1600
-    height = 2560
-    return f"""<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="{width}" height="{height}" viewBox="0 0 {width} {height}">
-  <image x="0" y="0" width="{width}" height="{height}" href="cover.jpg"/>
-</svg>
 """
 
 

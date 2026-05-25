@@ -49,15 +49,17 @@ def matches_selection(
     required: dict[str, Any],
     excluded: dict[str, Any],
     base_hints: BaseHints,
+    excluded_tags: tuple[str, ...] = (),
 ) -> bool:
     if base_hints.folders and not any(_path_in_folder(article.path, folder) for folder in base_hints.folders):
         return False
 
+    article_tags = article_tag_set(article)
+    if excluded_tags and any(_clean_tag(tag) in article_tags for tag in excluded_tags):
+        return False
+
     if base_hints.tags:
-        article_tags = {_clean_tag(str(tag)) for tag in _as_list(article.frontmatter.get("tags"))}
-        inline_tags = {_clean_tag(tag) for tag in re.findall(r"(?<!\w)#([\w/-]+)", article.markdown)}
-        all_tags = article_tags | inline_tags
-        if not all(_clean_tag(tag) in all_tags for tag in base_hints.tags):
+        if not all(_clean_tag(tag) in article_tags for tag in base_hints.tags):
             return False
 
     merged_required = {**base_hints.require, **required}
@@ -72,6 +74,12 @@ def matches_selection(
             return False
 
     return True
+
+
+def article_tag_set(article: Article) -> set[str]:
+    frontmatter_tags = {_clean_tag(str(tag)) for tag in _as_list(article.frontmatter.get("tags"))}
+    inline_tags = {_clean_tag(tag) for tag in re.findall(r"(?<!\w)#([\w/-]+)", article.markdown)}
+    return {tag for tag in frontmatter_tags | inline_tags if tag}
 
 
 def value_matches(actual: Any, expected: Any) -> bool:

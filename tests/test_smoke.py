@@ -91,6 +91,48 @@ Body
             )
         )
 
+    def test_selection_skips_excluded_frontmatter_tag(self):
+        article = parse_article(
+            "Articles/example.md",
+            """---
+title: Example Article
+tags:
+  - skip-kindle
+---
+Body
+""",
+        )
+
+        self.assertFalse(
+            matches_selection(
+                article,
+                required={},
+                excluded={},
+                base_hints=BaseHints(),
+                excluded_tags=("skip-kindle",),
+            )
+        )
+
+    def test_selection_skips_excluded_inline_tag(self):
+        article = parse_article(
+            "Articles/example.md",
+            """---
+title: Example Article
+---
+Body #skip-kindle
+""",
+        )
+
+        self.assertFalse(
+            matches_selection(
+                article,
+                required={},
+                excluded={},
+                base_hints=BaseHints(),
+                excluded_tags=("skip-kindle",),
+            )
+        )
+
 
     def test_build_epub(self):
         article = parse_article("Articles/example.md", "# Example\n\nHello [site](https://example.com).")
@@ -180,6 +222,55 @@ path = "{tmp_path / "state.json"}"
             self.assertEqual(len(epub_files), 2)
             self.assertTrue(any(path.name.startswith("first-") for path in epub_files))
             self.assertTrue(any(path.name.startswith("second-") for path in epub_files))
+
+    def test_cli_skips_default_skip_kindle_tag(self):
+        skipped = parse_article(
+            "Articles/skipped.md",
+            """---
+title: Skipped
+tags: [skip-kindle]
+---
+Hello.
+""",
+        )
+        included = parse_article("Articles/included.md", "# Included\n\nHello.")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            config_path = tmp_path / "config.toml"
+            config_path.write_text(
+                f"""
+[source]
+type = "local"
+vault_path = "{tmp_path}"
+articles_path = "Articles"
+
+[selection]
+require = {{}}
+exclude = {{}}
+limit = 10
+
+[output]
+title = "Ignored Bundle Title"
+author = "Kamil"
+directory = "{tmp_path / "out"}"
+
+[kindle]
+dry_run = true
+
+[state]
+path = "{tmp_path / "state.json"}"
+""",
+                encoding="utf-8",
+            )
+
+            with patch("send_to_kindle.cli.load_articles", return_value=[skipped, included]):
+                result = main(["--config", str(config_path)])
+
+            self.assertEqual(result, 0)
+            epub_files = sorted((tmp_path / "out").glob("*.epub"))
+            self.assertEqual(len(epub_files), 1)
+            self.assertTrue(epub_files[0].name.startswith("included-"))
 
     def test_cli_sends_readable_article_title_to_kindle(self):
         article = parse_article("Articles/clipped-note.md", "# Actual Article Title\n\nHello.")

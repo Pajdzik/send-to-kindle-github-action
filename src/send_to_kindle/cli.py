@@ -41,6 +41,7 @@ def main(argv: list[str] | None = None) -> int:
             required=config.selection.require,
             excluded=config.selection.exclude,
             base_hints=base_hints,
+            excluded_tags=tuple(config.selection.skip_tags),
         )
         and created_on_or_after(article.frontmatter.get("created"), config.selection.earliest_created)
     ]

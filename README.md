@@ -61,7 +61,7 @@ jobs:
           python-version: "3.12"
 
       - name: Send articles
-        uses: Pajdzik/send-to-kindle-github-action@v5
+        uses: Pajdzik/send-to-kindle-github-action@v14
         with:
           articles-path: Articles
           title: Kamilpedia Articles
@@ -144,6 +144,8 @@ KINDLE_ARTICLE_LIMIT=1
 By default, the action reads every Markdown file under `articles-path`.
 
 If `earliest-created` or `EARLIEST_CREATED` is set, files without a frontmatter `created` date are skipped, and only articles with `created` on or after the cutoff are considered.
+
+To skip a specific article without marking it as sent, add the `#skip-kindle` tag. This works in frontmatter, such as `tags: [skip-kindle]`, or as an inline Markdown tag in the article body.
 
 It can also use an Obsidian `.base` file as a selection hint. [Obsidian Bases](https://obsidian.md/help/bases/syntax) are saved as `.base` files and define filters over Markdown files and properties. This action supports a practical subset:
 

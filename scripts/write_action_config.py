@@ -36,6 +36,7 @@ def main() -> int:
                 f"base_file = {toml_string(args.base_file)}",
                 "require = {}",
                 "exclude = {}",
+                'skip_tags = ["skip-kindle"]',
                 f"earliest_created = {toml_string(earliest_created)}",
                 f"limit = {toml_int(args.limit, default=10)}",
                 "",

@@ -26,6 +26,8 @@ base_file = ""
 # exclude = { sent_to_kindle = true }
 require = {}
 exclude = {}
+# Articles tagged with any of these tags are skipped. Use #skip-kindle to opt out.
+skip_tags = ["skip-kindle"]
 # Optional: only consider articles whose frontmatter created date is on or after this date.
 earliest_created = ""
 

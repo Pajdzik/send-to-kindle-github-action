@@ -104,10 +104,10 @@ Body
         self.assertIn("mimetype", names)
         self.assertIn("OEBPS/content.opf", names)
         self.assertIn("OEBPS/cover.xhtml", names)
-        self.assertIn("OEBPS/images/cover.jpg", names)
+        self.assertIn("OEBPS/images/cover.svg", names)
         self.assertIn("OEBPS/article-1.xhtml", names)
 
-    def test_build_epub_declares_jpeg_cover(self):
+    def test_build_epub_declares_svg_cover(self):
         article = parse_article(
             "Articles/example.md",
             """---
@@ -123,16 +123,19 @@ Body
 
             with zipfile.ZipFile(output) as epub:
                 opf = epub.read("OEBPS/content.opf").decode("utf-8")
-                cover = epub.read("OEBPS/images/cover.jpg")
+                cover = epub.read("OEBPS/images/cover.svg").decode("utf-8")
                 cover_page = epub.read("OEBPS/cover.xhtml").decode("utf-8")
 
         self.assertIn('<meta name="cover" content="cover-image"/>', opf)
-        self.assertIn('href="images/cover.jpg"', opf)
-        self.assertIn('media-type="image/jpeg"', opf)
+        self.assertIn('href="images/cover.svg"', opf)
+        self.assertIn('media-type="image/svg+xml"', opf)
         self.assertIn('properties="cover-image"', opf)
         self.assertIn('<itemref idref="cover" linear="no"/>', opf)
-        self.assertIn('src="images/cover.jpg"', cover_page)
-        self.assertTrue(cover.startswith(b"\xff\xd8\xff"))
+        self.assertIn('src="images/cover.svg"', cover_page)
+        self.assertIn('<svg xmlns="http://www.w3.org/2000/svg"', cover)
+        self.assertIn('viewBox="0 0 1600 2560"', cover)
+        self.assertIn("<path", cover)
+        self.assertNotIn("<text", cover)
 
     def test_cover_author_uses_article_frontmatter_only(self):
         article = parse_article("Articles/example.md", "# Example\n\nBody")

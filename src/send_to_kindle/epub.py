@@ -151,12 +151,11 @@ def cover_jpeg(article: Article, metadata: EpubMetadata) -> bytes:
     image = Image.new("RGB", (width, height), "#f5f1e8")
     draw = ImageDraw.Draw(image)
 
-    title_font = cover_font(104, bold=True)
+    title_font = cover_font(132, bold=True)
     source_font = cover_font(56)
     byline_font = cover_font(58)
-    footer_font = cover_font(44)
 
-    author = article_author(article) or metadata.author
+    author = article_author(article)
     domain = article_domain(article)
     byline = f"By {author}" if author else ""
     source = domain.upper() if domain else ""
@@ -165,15 +164,16 @@ def cover_jpeg(article: Article, metadata: EpubMetadata) -> bytes:
     draw.rectangle((120, 120, 1480, 2440), outline="#9a8f7b", width=2)
     draw.text((120, 270), source, fill="#756a58", font=source_font)
 
-    title_lines = image_text_lines(draw, article.title, title_font, max_width=1360, max_lines=7)
-    y = 500
+    title_lines = image_text_lines(draw, article.title, title_font, max_width=1360, max_lines=8)
+    y = 430
     for line in title_lines:
         draw.text((120, y), line, fill="#1f1f1f", font=title_font)
-        y += 118
+        y += 148
 
-    draw.line((120, 1690, 540, 1690), fill="#252525", width=6)
-    draw.text((120, 1740), byline, fill="#3a3a3a", font=byline_font)
-    draw.text((120, 2185), "Sent to Kindle", fill="#756a58", font=footer_font)
+    divider_y = max(1660, y + 90)
+    draw.line((120, divider_y, 540, divider_y), fill="#252525", width=6)
+    if byline:
+        draw.text((120, divider_y + 50), byline, fill="#3a3a3a", font=byline_font)
 
     output = BytesIO()
     image.save(output, format="JPEG", quality=92, optimize=True)

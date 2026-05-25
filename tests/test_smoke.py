@@ -8,7 +8,7 @@ from send_to_kindle.articles import parse_article
 from send_to_kindle.base_filters import BaseHints, matches_selection
 from send_to_kindle.cli import created_on_or_after, main
 from send_to_kindle.config import KindleConfig
-from send_to_kindle.epub import EpubMetadata, build_epub
+from send_to_kindle.epub import EpubMetadata, article_author, build_epub
 from send_to_kindle.kindle import attachment_filename, send_to_kindle
 from send_to_kindle.markdown import inline_markdown
 
@@ -133,6 +133,11 @@ Body
         self.assertIn('<itemref idref="cover" linear="no"/>', opf)
         self.assertIn('src="images/cover.jpg"', cover_page)
         self.assertTrue(cover.startswith(b"\xff\xd8\xff"))
+
+    def test_cover_author_uses_article_frontmatter_only(self):
+        article = parse_article("Articles/example.md", "# Example\n\nBody")
+
+        self.assertEqual(article_author(article), "")
 
     def test_cli_builds_one_epub_per_article_in_dry_run(self):
         first = parse_article("Articles/first.md", "# First\n\nHello.")

@@ -158,6 +158,8 @@ If your Base uses advanced formulas, keep the action pointed at a dedicated arti
 
 The action sends one email per selected article. Each email has one EPUB attachment, and each EPUB uses the article title as its Kindle document title.
 
+Each EPUB also includes a generated SVG cover with the article title, author, and source domain. The cover author uses article frontmatter `author`, `byline`, or `creator` when present, then falls back to the action `author` input. The source domain is inferred from supported URL frontmatter such as `url`, `canonical_url`, `original_url`, or `link`.
+
 After a successful run, the action writes article IDs to:
 
 ```text

@@ -103,7 +103,34 @@ Body
 
         self.assertIn("mimetype", names)
         self.assertIn("OEBPS/content.opf", names)
+        self.assertIn("OEBPS/cover.xhtml", names)
+        self.assertIn("OEBPS/images/cover.svg", names)
         self.assertIn("OEBPS/article-1.xhtml", names)
+
+    def test_build_epub_declares_svg_cover(self):
+        article = parse_article(
+            "Articles/example.md",
+            """---
+title: A Larger Article Title
+author: Jane Writer
+url: https://www.example.com/path
+---
+Body
+""",
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            output = build_epub([article], EpubMetadata(title=article.title, author="Kamil"), Path(tmp))
+
+            with zipfile.ZipFile(output) as epub:
+                opf = epub.read("OEBPS/content.opf").decode("utf-8")
+                cover = epub.read("OEBPS/images/cover.svg").decode("utf-8")
+
+        self.assertIn('<meta name="cover" content="cover-image"/>', opf)
+        self.assertIn('properties="cover-image"', opf)
+        self.assertIn('<itemref idref="cover" linear="no"/>', opf)
+        self.assertIn("A Larger Article Title", cover)
+        self.assertIn("By Jane Writer", cover)
+        self.assertIn("EXAMPLE.COM", cover)
 
     def test_cli_builds_one_epub_per_article_in_dry_run(self):
         first = parse_article("Articles/first.md", "# First\n\nHello.")

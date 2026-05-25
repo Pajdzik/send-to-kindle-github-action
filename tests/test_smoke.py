@@ -7,7 +7,9 @@ from unittest.mock import patch
 from send_to_kindle.articles import parse_article
 from send_to_kindle.base_filters import BaseHints, matches_selection
 from send_to_kindle.cli import created_on_or_after, main
+from send_to_kindle.config import KindleConfig
 from send_to_kindle.epub import EpubMetadata, build_epub
+from send_to_kindle.kindle import attachment_filename, send_to_kindle
 from send_to_kindle.markdown import inline_markdown
 
 
@@ -29,6 +31,20 @@ Hello **world**.
         self.assertEqual(article.title, "Example Article")
         self.assertIs(article.frontmatter["kindle"], True)
         self.assertEqual(article.frontmatter["tags"], ["kindle", "article"])
+
+    def test_parse_article_uses_heading_when_frontmatter_title_is_filename(self):
+        article = parse_article(
+            "Articles/20260524-clipped-note.md",
+            """---
+title: 20260524 clipped note
+---
+# A Much Better Article Title
+
+Hello.
+""",
+        )
+
+        self.assertEqual(article.title, "A Much Better Article Title")
 
 
     def test_selection_matches_tags_and_properties(self):
@@ -108,6 +124,74 @@ path = "{tmp_path / "state.json"}"
             self.assertEqual(len(epub_files), 2)
             self.assertTrue(any(path.name.startswith("first-") for path in epub_files))
             self.assertTrue(any(path.name.startswith("second-") for path in epub_files))
+
+    def test_cli_sends_readable_article_title_to_kindle(self):
+        article = parse_article("Articles/clipped-note.md", "# Actual Article Title\n\nHello.")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            config_path = tmp_path / "config.toml"
+            config_path.write_text(
+                f"""
+[source]
+type = "local"
+vault_path = "{tmp_path}"
+articles_path = "Articles"
+
+[selection]
+require = {{}}
+exclude = {{}}
+limit = 10
+
+[output]
+title = "Ignored Bundle Title"
+author = "Kamil"
+directory = "{tmp_path / "out"}"
+
+[kindle]
+dry_run = false
+
+[state]
+path = "{tmp_path / "state.json"}"
+""",
+                encoding="utf-8",
+            )
+
+            with (
+                patch("send_to_kindle.cli.load_articles", return_value=[article]),
+                patch("send_to_kindle.cli.send_to_kindle") as mocked_send,
+            ):
+                result = main(["--config", str(config_path)])
+
+            self.assertEqual(result, 0)
+            mocked_send.assert_called_once()
+            self.assertEqual(mocked_send.call_args.kwargs["document_title"], "Actual Article Title")
+
+    def test_kindle_attachment_filename_uses_document_title(self):
+        self.assertEqual(
+            attachment_filename('A Better: Article / Title?'),
+            "A Better Article Title.epub",
+        )
+
+        with tempfile.TemporaryDirectory() as tmp:
+            epub_path = Path(tmp) / "temp-slug-20260524.epub"
+            epub_path.write_bytes(b"epub")
+            config = KindleConfig(
+                dry_run=False,
+                kindle_email="kindle@example.com",
+                from_email="from@example.com",
+            )
+
+            with (
+                patch.dict("os.environ", {"SMTP_USER": "user", "SMTP_PASSWORD": "password"}),
+                patch("send_to_kindle.kindle.smtplib.SMTP") as smtp_class,
+            ):
+                send_to_kindle(epub_path, config, document_title="Actual Article Title")
+
+            smtp = smtp_class.return_value.__enter__.return_value
+            message = smtp.send_message.call_args.args[0]
+            attachment = next(message.iter_attachments())
+            self.assertEqual(attachment.get_filename(), "Actual Article Title.epub")
 
     def test_markdown_images_render_as_links(self):
         html = inline_markdown("![Architecture](https://example.com/diagram.svg)")

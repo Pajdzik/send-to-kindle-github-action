@@ -59,23 +59,26 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     output_dir = Path(config.output.directory)
-    epub_paths = [
-        build_epub(
-            [article],
-            EpubMetadata(title=article.title, author=config.output.author),
-            output_dir,
+    epub_jobs = [
+        (
+            article,
+            build_epub(
+                [article],
+                EpubMetadata(title=article.title, author=config.output.author),
+                output_dir,
+            ),
         )
         for article in articles
     ]
     effective_dry_run = args.dry_run or config.kindle.dry_run
     if effective_dry_run:
-        for epub_path in epub_paths:
+        for _article, epub_path in epub_jobs:
             print(f"Built EPUB: {epub_path}")
         print(f"Dry run: not sent, and state was not updated. Articles: {len(articles)}")
         return 0
 
-    for epub_path in epub_paths:
-        send_to_kindle(epub_path, config.kindle)
+    for article, epub_path in epub_jobs:
+        send_to_kindle(epub_path, config.kindle, document_title=article.title)
     state.mark_sent([article.id for article in articles])
     state.save(state_path)
     print(f"Sent {len(articles)} article(s) to Kindle.")

@@ -3,12 +3,13 @@ from __future__ import annotations
 from email.message import EmailMessage
 import os
 from pathlib import Path
+import re
 import smtplib
 
 from .config import KindleConfig
 
 
-def send_to_kindle(epub_path: Path, config: KindleConfig) -> None:
+def send_to_kindle(epub_path: Path, config: KindleConfig, document_title: str | None = None) -> None:
     if config.dry_run:
         return
 
@@ -38,7 +39,7 @@ def send_to_kindle(epub_path: Path, config: KindleConfig) -> None:
         epub_path.read_bytes(),
         maintype="application",
         subtype="epub+zip",
-        filename=epub_path.name,
+        filename=attachment_filename(document_title) or epub_path.name,
     )
 
     with smtplib.SMTP(smtp_host, smtp_port) as smtp:
@@ -72,3 +73,16 @@ def _int_from_env_or_default(env_name: str, default: int) -> int:
             except ValueError as error:
                 raise ValueError(f"{env_name} must be an integer") from error
     return default
+
+
+def attachment_filename(document_title: str | None) -> str:
+    if not document_title:
+        return ""
+
+    stem = re.sub(r'[\x00-\x1f<>:"/\\|?*]+', " ", document_title)
+    stem = re.sub(r"\s+", " ", stem).strip().rstrip(".")
+    if not stem:
+        return ""
+    if len(stem) > 120:
+        stem = stem[:120].rstrip()
+    return f"{stem}.epub"

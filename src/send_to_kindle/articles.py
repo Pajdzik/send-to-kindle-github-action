@@ -91,18 +91,56 @@ def parse_scalar(value: str) -> Any:
 
 
 def infer_title(path: str, body: str, frontmatter: dict[str, Any]) -> str:
-    for key in ("title", "name"):
+    filename_title = infer_title_from_path(path)
+    body_title = infer_title_from_body(body)
+
+    title_keys = ("title", "name", "article_title", "articleTitle", "headline", "page_title", "pageTitle")
+    for key in title_keys:
         value = frontmatter.get(key)
         if isinstance(value, str) and value.strip():
-            return value.strip()
+            title = clean_title(value)
+            if body_title and equivalent_title(title, filename_title):
+                return body_title
+            return title
 
+    return body_title or filename_title or "Untitled"
+
+
+def infer_title_from_body(body: str) -> str:
     for line in body.splitlines():
-        match = re.match(r"^#\s+(.+?)\s*$", line)
+        match = re.match(r"^#\s+(.+?)\s*#*\s*$", line)
         if match:
-            return match.group(1).strip()
+            return clean_title(match.group(1))
 
+    lines = body.splitlines()
+    for index, line in enumerate(lines[:-1]):
+        if line.strip() and re.match(r"^\s*(=+|-+)\s*$", lines[index + 1]):
+            return clean_title(line)
+
+    return ""
+
+
+def infer_title_from_path(path: str) -> str:
     stem = path.rsplit("/", 1)[-1].rsplit(".", 1)[0]
     return stem.replace("_", " ").replace("-", " ").strip() or "Untitled"
+
+
+def clean_title(value: str) -> str:
+    title = value.strip()
+    link_match = re.match(r"^\[(.+?)\]\([^)]+\)$", title)
+    if link_match:
+        title = link_match.group(1).strip()
+    return re.sub(r"\s+", " ", title)
+
+
+def equivalent_title(first: str, second: str) -> bool:
+    first_key = title_key(first)
+    second_key = title_key(second)
+    return bool(first_key and second_key and first_key == second_key)
+
+
+def title_key(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "", value.lower())
 
 
 def article_sort_key(article: Article) -> tuple[str, str]:
